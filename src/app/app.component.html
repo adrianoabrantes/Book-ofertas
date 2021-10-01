@@ -1,60 +1,74 @@
-<div class="main">
-  <div class="title">
-    <label>Menu Avançado</label>
-    <input title="Avançado" type="checkbox" class="check" [value]="avancado" (change)="setAvancado()">
-    <br />
-    Preço Atual:{{valorMercado}}
-    Valor Mercado:{{valorMercado | currency:"BRL"}}
-    <br />
-    Boleta: {{boleta}}
-    <br />
-    <div *ngIf="avancado">
-      valor compra: {{valorCompra | currency:"BRL"}}
+<form [formGroup]="bookOfertasForm">
+  <div class="main">
+    <div class="title">
+      <label>Menu Avançado</label>
+      <input title="Avançado" type="checkbox" class="check" [value]="avancado" (change)="setAvancado()">
       <br />
-      contratos: {{qtdeContrato}}
+      Preço Atual:{{valorMercado}}
+      Valor Mercado:{{valorMercado | currency:"BRL"}}
       <br />
-      valor compra: {{valorCompra}}
+      Boleta: {{boleta}}
+      <br />
+      <div *ngIf="avancado">
+        valor compra: {{valorCompra | currency:"BRL"}}
+        <br />
+        contratos: {{qtdeContrato}}
+        <br />
+        valor compra: {{valorCompra}}
+      </div>
     </div>
-  </div>
-  <div class="contratos">
-    <button (click)="removeContratos()">-</button>
-    <input #qtdeContratos [value]="qtdeContrato" class="campos">
-    <button (click)="addContratos()">+</button>
-  </div>
-  <div>
-    <Button class="botoes" (click)="comprar(qtdeContratos)">Comprar</Button>
-    <Button class="botoes" (click)="fechar()" [disabled]='!valorMercado'>Fechar</Button>
-    <Button class="botoes" (click)="vender(qtdeContratos)" [disabled]='!valorMercado'>Vender</Button>
-  </div>
-  <div>
-    Lucro/Prejuizo: {{lucroPrejuizo | currency:"BRL"}}
+    <div class="contratos">
+      <button mat-raised-button color="primary" (click)="removeContratos()">-</button>
+      <mat-form-field class="example-full-width" appearance="fill">
+        <mat-label>Contratos</mat-label>
+        <input #qtdeContratos matInput type="text" [value]="qtdeContrato" class="campos">
+      </mat-form-field>
+      <button mat-raised-button color="primary" (click)="addContratos()">+</button>
+    </div>
+    <mat-form-field appearance="fill">
+      <mat-label>Periodo grafico</mat-label>
+      <mat-select [value]="tempoGrafico">
+        <mat-option *ngFor="let tempo of tempos" [value]="tempo.id">
+          {{tempo.nome}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <div>
+      <button mat-raised-button color="primary" (click)="comprar(qtdeContratos)">Comprar</button>
+      <button mat-raised-button color="primary" (click)="fechar()" [disabled]='!valorMercado'>Fechar</button>
+      <button mat-raised-button color="primary" (click)="vender(qtdeContratos)"
+        [disabled]='!valorMercado'>Vender</button>
+    </div>
+    <div>
+      Lucro/Prejuizo: {{lucroPrejuizo | currency:"BRL"}}
+      <br />
+      Total de Contratos: {{totalContratos}}
+    </div>
+    <div style="position: absolute;left: 15;margin-top: 30px; display: block;">
+      Compras:
+      <table>
+        <tr>
+          <td *ngFor="let item of listTable">{{item}}</td>
+        </tr>
+        <tr *ngFor="let contrato of listaCompras">
+          <td>{{contrato.id}}</td>
+          <td>{{contrato.qtdeContratos}}</td>
+          <td>{{contrato.dataCompra}}</td>
+          <td>
+            <span *ngIf="contrato.valorCompra">
+              {{contrato.valorCompra}}
+            </span>
+            <span *ngIf="contrato.valorVenda">
+              {{contrato.valorVenda}}
+            </span>
+          </td>
+          <td>{{contrato.dataVenda}}</td>
+          <td>{{contrato.valorCompra}}</td>
+          <td>{{contrato.valorVenda}}</td>
+        </tr>
+      </table>
+    </div>
     <br />
-    Total de Contratos: {{totalContratos}}
+    <div #areaChart style=" position: absolute;right: 0; margin-top: 30px;display: block;"></div>
   </div>
-  <div style="position: absolute;left: 15;margin-top: 30px;">
-    Compras:
-    <table>
-      <tr>
-        <td *ngFor="let item of listTable">{{item}}</td>
-      </tr>
-      <tr *ngFor="let contrato of listaCompras">
-        <td>{{contrato.id}}</td>
-        <td>{{contrato.qtdeContratos}}</td>
-        <td>{{contrato.dataCompra}}</td>
-        <td>
-          <span *ngIf="contrato.valorCompra">
-            {{contrato.valorCompra}}
-          </span>
-          <span *ngIf="contrato.valorVenda">
-            {{contrato.valorVenda}}
-          </span>
-        </td>
-        <td>{{contrato.dataVenda}}</td>
-        <td>{{contrato.valorCompra}}</td>
-        <td>{{contrato.valorVenda}}</td>
-      </tr>
-    </table>
-  </div>
-  <br />
-<div #areaChart></div>
-</div>
+</form>

@@ -1,4 +1,5 @@
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
 import * as moment from 'moment';
 import { ContratoModel } from './models/contrato/contrato.model';
 import { ValorMercadoService } from './services/valor-mercado.service';
@@ -11,12 +12,14 @@ declare var google: any;
 })
 export class AppComponent implements OnInit, AfterViewInit {
   title = 'book-ofertas';
+  bookOfertasForm: FormGroup;
+
   avancado = false;
   valorMercado = 0;
   qtdeContrato = 1;
   valorCompra = 0;
   listaCompras: ContratoModel[] = [];
-  contrato = new ContratoModel();
+  contrato: ContratoModel;
   boleta: number = 0;
   alavancagem = 0;
   lucroPrejuizo = 0;
@@ -24,7 +27,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   listTable = ['Boleta', 'Contrato', 'Data Compra', 'Valor Mercado', 'Data venda', 'Preço Compra', 'Preço Venda']
 
   constructor(private valorMercadoService: ValorMercadoService) {
-
+    this.construirCandle()
   }
 
   ngOnInit() {
@@ -51,7 +54,7 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.valorCompra = this.valorMercado;
       this.criarContrato(true);
     }
-    if (this.listaCompras.length >= 100) {
+    if (this.listaCompras.length >= 1000) {
       this.listaCompras = [];
     }
   }
@@ -108,37 +111,110 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.processarLucroPrejuizo(this.contrato);
   }
 
-
-  @ViewChild('areaChart') pieChart: any;
-  drawChart = () => {
-    const data = google.visualization.arrayToDataTable([
-      ["Ago", 11, 28, 38, 15, 68, 22, 76, 15, 31, 38, 55, 66, 77],
-      ["Tue", 31, 38, 55, 66, 77, 19, 66, 50, 15, 68, 22, 76, 11],
-      ["Wed", 50, 55, 77, 80, 45, 68, 66, 22, 31, 38, 55, 66, 32],
-      ["Thu", 77, 77, 66, 50, 55, 77, 80, 45, 66, 22, 15, 41, 99],
-      ["Fri", 68, 66, 22, 15, 77, 77, 66, 50, 80, 45, 68, 66, 22]
-    ], true);
-
-    const options = {
-      title: 'Area Chart',
-      hAxis: { title: 'Year', titleTextStyle: { color: '#333' } },
-      vAxis: { minValue: 0 },
-      candlestick: {
-        fallingColor: { strokeWidth: 0, fill: '#a52714' }, // red
-        risingColor: { strokeWidth: 0, fill: '#0f9d58' }   // green
-      }
-    };
-
-    const chart = new google.visualization.candlestickChart(this.pieChart.nativeElement);
-    chart.draw(data, options);
-  }
-
   ngAfterViewInit(): void {
-    google.charts.load('current', { packages: ['corechart'] });
-    google.charts.setOnLoadCallback(this.drawChart);
+
   }
 
   setAvancado() {
     this.avancado = !this.avancado
   }
+
+  listaCandle: Candle[] = [];
+  tempoGrafico = new FormControl();
+  tempos = [
+    { id: 1, nome: '1Min', tempo: 1 },
+    { id: 2, nome: '5Min', tempo: 5 }
+  ]
+
+  construirCandle() {
+    let timerInicio = new Date();
+    let timerFim: Date;
+    let entrada = this.valorMercado;
+    let valorAtual = 0;
+    let maxima = 0;
+    let minima = 0;
+    let listaValores: number[] = [];
+    let tempoRestanteProgramado = 10;
+    let tempoRestante = tempoRestanteProgramado;
+
+    if (this.tempoGrafico.value == 1) {
+      tempoRestanteProgramado = 60
+
+    } else if (this.tempoGrafico.value == 1) {
+      tempoRestanteProgramado = (60 * 5)
+    }
+
+    let intervalo = setInterval(() => {
+      listaValores.push(this.valorMercado)
+      console.log('construndo candle')
+      maxima = Math.max(...listaValores);
+      minima = Math.min(...listaValores);
+
+      tempoRestante--;
+
+      if (tempoRestante == 0) {
+        this.paraIntervalo(intervalo);
+        timerFim = new Date();
+        valorAtual = this.valorMercado;
+
+        console.log('timer f ' + moment(timerFim).format('HH:MM:ss'));
+
+        this.listaCandle.push({ timerInicio, timerFim, entrada, minima, maxima, valorAtual })
+        tempoRestante = tempoRestanteProgramado;
+        this.construirCandle();
+        this.criarGrafico();
+        google.charts.load('current', { packages: ['corechart'] });
+        google.charts.setOnLoadCallback(this.drawChart);
+      }
+    }, 1000)
+  }
+
+  paraIntervalo(intervalo: any) {
+    clearInterval(intervalo);
+    console.log('parou')
+  }
+
+  @ViewChild('areaChart') pieChart: any;
+  drawChart: any;
+
+  lista: any;
+  criarGrafico() {
+    this.lista = this.listaCandle.map(candle => [
+      moment(candle.timerInicio).format('HH:MM'),
+      candle.entrada,
+      candle.maxima,
+      candle.minima,
+      candle.valorAtual
+    ])
+
+    this.drawChart = () => {
+      let data = google.visualization.arrayToDataTable(
+        this.lista
+        , true);
+
+      const options = {
+        candlestick: {
+          fallingColor: { strokeWidth: 2, stroke: '#a52714' }, // red
+          risingColor: { strokeWidth: 2, stroke: '#0f9d58' }   // green
+
+        }
+      };
+
+      let chart = new google.visualization.CandlestickChart(this.pieChart.nativeElement);
+      chart.draw(data, options);
+    }
+  }
+
+  teste(value: any) {
+    console.log(value)
+  }
+}
+
+interface Candle {
+  entrada: number;
+  valorAtual: number;
+  maxima: number;
+  minima: number;
+  timerInicio: Date;
+  timerFim: Date;
 }
